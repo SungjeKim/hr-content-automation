@@ -1,0 +1,506 @@
+{
+  "timestamp": "2025-06-20T02:09:04.061Z",
+  "summary": {
+    "passed": 50,
+    "failed": 2,
+    "warnings": 3,
+    "total": 55
+  },
+  "details": [
+    {
+      "type": "environment",
+      "category": "files",
+      "test": ".env 파일",
+      "status": "passed",
+      "message": "환경 설정 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.013Z"
+    },
+    {
+      "type": "environment",
+      "category": "variables",
+      "test": "ANTHROPIC_API_KEY",
+      "status": "failed",
+      "message": "Claude API 키가 누락되었습니다",
+      "details": ".env 파일에서 설정해주세요",
+      "timestamp": "2025-06-20T02:09:02.017Z"
+    },
+    {
+      "type": "environment",
+      "category": "variables",
+      "test": "SESSION_SECRET",
+      "status": "failed",
+      "message": "세션 보안 키가 누락되었습니다",
+      "details": ".env 파일에서 설정해주세요",
+      "timestamp": "2025-06-20T02:09:02.017Z"
+    },
+    {
+      "type": "environment",
+      "category": "variables",
+      "test": "BRUNCH_EMAIL",
+      "status": "warnings",
+      "message": "브런치 이메일가 설정되지 않았습니다",
+      "details": "브런치 자동 발행을 사용하려면 설정해주세요",
+      "timestamp": "2025-06-20T02:09:02.017Z"
+    },
+    {
+      "type": "environment",
+      "category": "variables",
+      "test": "BRUNCH_PASSWORD",
+      "status": "warnings",
+      "message": "브런치 비밀번호가 설정되지 않았습니다",
+      "details": "브런치 자동 발행을 사용하려면 설정해주세요",
+      "timestamp": "2025-06-20T02:09:02.017Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.018Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/analyzers",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.019Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/scrapers",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.019Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/writers",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.019Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/workflows",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.020Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/publishers",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.020Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "src/jobs",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data/articles",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data/analysis",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data/drafts",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data/quality",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.021Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "data/workflows",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.022Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "views",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.022Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "views/partials",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.023Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "test",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.023Z"
+    },
+    {
+      "type": "structure",
+      "category": "directories",
+      "test": "scripts",
+      "status": "passed",
+      "message": "디렉토리가 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.023Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/app.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.023Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/brunchAnalyzer-simple.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.023Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/scrapers/hrContentScraper.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.024Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/analyzers/contentFilter.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.024Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/writers/articleWriter.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.024Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/analyzers/qualityChecker.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.024Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/workflows/contentCreation.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.024Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/workflows/publishingWorkflow.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/publishers/brunchPublisher.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/jobs/jobManager.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "src/scheduler.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "production.js",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "files",
+      "category": "source",
+      "test": "package.json",
+      "status": "passed",
+      "message": "소스 파일이 존재합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.025Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "installation",
+      "test": "node_modules",
+      "status": "passed",
+      "message": "npm 패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.028Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "@anthropic-ai/sdk",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.028Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "express",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.028Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "puppeteer",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.028Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "axios",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.028Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "cheerio",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.029Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "fs-extra",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.029Z"
+    },
+    {
+      "type": "dependencies",
+      "category": "packages",
+      "test": "socket.io",
+      "status": "passed",
+      "message": "패키지가 설치되었습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.029Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "HRContentScraper",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.094Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "ContentFilter",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.094Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "ArticleWriter",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.111Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "QualityChecker",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.633Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "ContentCreationWorkflow",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.634Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "PublishingWorkflow",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.638Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "BrunchPublisher",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.811Z"
+    },
+    {
+      "type": "modules",
+      "category": "imports",
+      "test": "JobManager",
+      "status": "passed",
+      "message": "모듈을 성공적으로 로드했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:02.811Z"
+    },
+    {
+      "type": "api",
+      "category": "connectivity",
+      "test": "Claude API",
+      "status": "warnings",
+      "message": "Claude API 크레딧이 부족합니다",
+      "details": "400 {\"type\":\"error\",\"error\":{\"type\":\"invalid_request_error\",\"message\":\"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.\"}}",
+      "timestamp": "2025-06-20T02:09:03.135Z"
+    },
+    {
+      "type": "scraping",
+      "category": "connectivity",
+      "test": "HTTP 요청",
+      "status": "passed",
+      "message": "HTTP 요청이 성공했습니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:04.052Z"
+    },
+    {
+      "type": "scraping",
+      "category": "parsing",
+      "test": "HTML 파싱",
+      "status": "passed",
+      "message": "HTML 파싱이 정상 작동합니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:04.058Z"
+    },
+    {
+      "type": "data",
+      "category": "integrity",
+      "test": "스타일 템플릿",
+      "status": "passed",
+      "message": "스타일 템플릿이 올바른 형식입니다",
+      "details": null,
+      "timestamp": "2025-06-20T02:09:04.061Z"
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>📰 HR 기사 목록</title>
+</head>
+<body>
+  <h1>요약된 HR 기사들</h1>
+  <ul>
+    <% articles.forEach((article, i) => { %>
+      <li>
+        <strong><%= article.title %></strong><br/>
+        <small><%= article.summary %></small><br/>
+        <form action="/select" method="POST">
+          <input type="hidden" name="articleIndex" value="<%= i %>">
+          <button type="submit">이 기사 선택</button>
+        </form>
+        <hr/>
+      </li>
+    <% }) %>
+  </ul>
+</body>
+</html>

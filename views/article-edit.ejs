@@ -1,0 +1,248 @@
+<%- include('header') %>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Edit Article</h6>
+                <div>
+                    <a href="/articles" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Articles
+                    </a>
+                </div>
+            </div>
+            <div class="card-body">
+                <form onsubmit="updateArticle(event)">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Title</label>
+                                <input type="text" class="form-control" id="title" value="<%= article.title %>" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-control" id="status">
+                                    <option value="draft" <%= article.status === 'draft' ? 'selected' : '' %>>Draft</option>
+                                    <option value="published" <%= article.status === 'published' ? 'selected' : '' %>>Published</option>
+                                    <option value="scheduled" <%= article.status === 'scheduled' ? 'selected' : '' %>>Scheduled</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-control" id="category">
+                                    <option value="">Select Category</option>
+                                    <option value="recruitment" <%= article.category === 'recruitment' ? 'selected' : '' %>>Recruitment</option>
+                                    <option value="company-culture" <%= article.category === 'company-culture' ? 'selected' : '' %>>Company Culture</option>
+                                    <option value="employee-development" <%= article.category === 'employee-development' ? 'selected' : '' %>>Employee Development</option>
+                                    <option value="workplace-tips" <%= article.category === 'workplace-tips' ? 'selected' : '' %>>Workplace Tips</option>
+                                    <option value="industry-insights" <%= article.category === 'industry-insights' ? 'selected' : '' %>>Industry Insights</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="publicationType" class="form-label">Publication Type</label>
+                                <select class="form-control" id="publicationType">
+                                    <option value="manual" <%= article.publicationType === 'manual' ? 'selected' : '' %>>Manual</option>
+                                    <option value="automatic" <%= article.publicationType === 'automatic' ? 'selected' : '' %>>Automatic</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags (comma-separated)</label>
+                        <input type="text" class="form-control" id="tags" value="<%= article.tags ? article.tags.join(', ') : '' %>" placeholder="HR, recruitment, workplace">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="content" class="form-label">Content</label>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="text-muted">Preview and edit your article content</span>
+                            <div>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePreview()">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" onclick="formatContent()">
+                                    <i class="fas fa-magic"></i> Auto Format
+                                </button>
+                            </div>
+                        </div>
+                        <textarea class="form-control" id="content" rows="15" required><%= article.content %></textarea>
+                    </div>
+                    
+                    <div id="preview" class="card mb-3" style="display: none;">
+                        <div class="card-header">
+                            <h6 class="m-0">Content Preview</h6>
+                        </div>
+                        <div class="card-body" id="previewContent">
+                            <!-- Preview content will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Article Info</h6>
+                                    <p class="mb-1"><strong>Created:</strong> <%= new Date(article.createdAt).toLocaleString() %></p>
+                                    <p class="mb-1"><strong>Updated:</strong> <%= new Date(article.updatedAt).toLocaleString() %></p>
+                                    <% if (article.publishedAt) { %>
+                                    <p class="mb-1"><strong>Published:</strong> <%= new Date(article.publishedAt).toLocaleString() %></p>
+                                    <% } %>
+                                    <p class="mb-0"><strong>Word Count:</strong> <span id="wordCount">0</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6 class="card-title">Quick Actions</h6>
+                                    <div class="d-grid gap-2">
+                                        <% if (article.status === 'draft') { %>
+                                        <button type="button" class="btn btn-success btn-sm" onclick="publishArticle()">
+                                            <i class="fas fa-paper-plane"></i> Publish Now
+                                        </button>
+                                        <% } %>
+                                        <button type="button" class="btn btn-info btn-sm" onclick="scheduleArticle()">
+                                            <i class="fas fa-clock"></i> Schedule Publication
+                                        </button>
+                                        <button type="button" class="btn btn-warning btn-sm" onclick="duplicateArticle()">
+                                            <i class="fas fa-copy"></i> Duplicate Article
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-end mt-4">
+                        <a href="/articles" class="btn btn-secondary me-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const articleId = '<%= article.id %>';
+
+function updateWordCount() {
+    const content = document.getElementById('content').value;
+    const wordCount = content.trim().split(/\s+/).length;
+    document.getElementById('wordCount').textContent = wordCount;
+}
+
+function togglePreview() {
+    const preview = document.getElementById('preview');
+    const content = document.getElementById('content').value;
+    
+    if (preview.style.display === 'none') {
+        document.getElementById('previewContent').innerHTML = content.replace(/\n/g, '<br>');
+        preview.style.display = 'block';
+    } else {
+        preview.style.display = 'none';
+    }
+}
+
+function formatContent() {
+    const content = document.getElementById('content');
+    let text = content.value;
+    
+    // Basic formatting: add proper spacing and paragraph breaks
+    text = text.replace(/([.!?])\s*([A-Z])/g, '$1\n\n$2');
+    text = text.replace(/\n{3,}/g, '\n\n');
+    text = text.trim();
+    
+    content.value = text;
+    updateWordCount();
+}
+
+async function updateArticle(event) {
+    event.preventDefault();
+    
+    const formData = {
+        title: document.getElementById('title').value,
+        content: document.getElementById('content').value,
+        category: document.getElementById('category').value,
+        tags: document.getElementById('tags').value,
+        publicationType: document.getElementById('publicationType').value,
+        status: document.getElementById('status').value
+    };
+    
+    const button = event.target.querySelector('button[type="submit"]');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    
+    try {
+        const response = await axios.put(`/articles/${articleId}`, formData);
+        if (response.data.success) {
+            alert('Article updated successfully!');
+            // Optionally redirect to articles list
+            // window.location.href = '/articles';
+        } else {
+            alert('Failed to update article: ' + response.data.error);
+        }
+    } catch (error) {
+        alert('Error updating article: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+async function publishArticle() {
+    if (!confirm('Are you sure you want to publish this article?')) return;
+    
+    try {
+        const response = await axios.post(`/articles/${articleId}/publish`);
+        if (response.data.success) {
+            alert('Article published successfully!');
+            document.getElementById('status').value = 'published';
+        } else {
+            alert('Failed to publish article: ' + response.data.error);
+        }
+    } catch (error) {
+        alert('Error publishing article: ' + error.message);
+    }
+}
+
+function scheduleArticle() {
+    const scheduleDate = prompt('Enter schedule date and time (YYYY-MM-DD HH:MM):');
+    if (!scheduleDate) return;
+    
+    // This would typically open a modal with better date/time picker
+    alert('Scheduling functionality would be implemented here');
+}
+
+function duplicateArticle() {
+    if (confirm('Create a duplicate of this article?')) {
+        const title = document.getElementById('title').value + ' (Copy)';
+        const content = document.getElementById('content').value;
+        
+        // This would create a new article with the same content
+        alert('Duplication functionality would be implemented here');
+    }
+}
+
+// Initialize word count and update on input
+document.addEventListener('DOMContentLoaded', function() {
+    updateWordCount();
+    document.getElementById('content').addEventListener('input', updateWordCount);
+});
+</script>
+
+<%- include('footer') %>

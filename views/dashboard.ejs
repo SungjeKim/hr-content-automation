@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .dashboard-card {
+            transition: transform 0.2s;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+        }
+        .status-active { color: #28a745; }
+        .status-inactive { color: #dc3545; }
+        .recent-article {
+            border-left: 3px solid #007bff;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/navbar') %>
+    
+    <div class="container mt-4">
+        <h1 class="mb-4"><i class="fas fa-dashboard"></i> <%= title %></h1>
+        
+        <!-- 시스템 상태 요약 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card dashboard-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">수집된 기사</h5>
+                        <h2 class="text-primary"><%= systemStatus?.articles?.collected || 0 %></h2>
+                        <small class="text-muted">전체 기사</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">필터링된 기사</h5>
+                        <h2 class="text-success"><%= systemStatus?.articles?.filtered || 0 %></h2>
+                        <small class="text-muted">품질 선별</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">생성된 글</h5>
+                        <h2 class="text-info"><%= systemStatus?.drafts?.total || 0 %></h2>
+                        <small class="text-muted">초안 작성</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card dashboard-card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">평균 품질</h5>
+                        <h2 class="text-warning"><%= systemStatus?.quality?.averageScore || 0 %>점</h2>
+                        <small class="text-muted">통과율 <%= systemStatus?.quality?.passRate || 0 %>%</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 빠른 작업 -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-bolt"></i> 빠른 작업</h5>
+                    </div>
+                    <div class="card-body">
+                        <button class="btn btn-primary me-2" onclick="scrapeArticles()">
+                            <i class="fas fa-download"></i> 기사 수집
+                        </button>
+                        <button class="btn btn-success me-2" onclick="filterArticles()">
+                            <i class="fas fa-filter"></i> 기사 필터링
+                        </button>
+                        <button class="btn btn-info me-2" onclick="generateContent()">
+                            <i class="fas fa-pen"></i> 글 자동 생성
+                        </button>
+                        <button class="btn btn-warning me-2" onclick="startWorkflow()">
+                            <i class="fas fa-project-diagram"></i> 전체 워크플로우 시작
+                        </button>
+                        <a href="/workflows" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-tasks"></i> 워크플로우 관리
+                        </a>
+                        <a href="/analytics" class="btn btn-outline-warning">
+                            <i class="fas fa-chart-line"></i> 통계 보기
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 최근 생성된 글 -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-file-alt"></i> 최근 생성된 글</h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (recentDrafts && recentDrafts.length > 0) { %>
+                            <% recentDrafts.forEach(article => { %>
+                                <div class="recent-article p-2">
+                                    <h6 class="mb-1">
+                                        <a href="/preview/<%= encodeURIComponent(article.title) %>">
+                                            <%= article.title %>
+                                        </a>
+                                    </h6>
+                                    <small class="text-muted">
+                                        <%= article.wordCount %>자 | 
+                                        <%= new Date(article.generatedAt).toLocaleDateString('ko-KR') %>
+                                    </small>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-muted">아직 생성된 글이 없습니다.</p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="fas fa-info-circle"></i> 시스템 상태</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            <strong>Claude API:</strong> 
+                            <span class="<%= systemStatus?.api?.claudeStatus === 'configured' ? 'status-active' : 'status-inactive' %>">
+                                <i class="fas fa-circle"></i> 
+                                <%= systemStatus?.api?.claudeStatus === 'configured' ? '활성' : '비활성' %>
+                            </span>
+                        </p>
+                        <p>
+                            <strong>마지막 기사 수집:</strong> 
+                            <%= systemStatus?.articles?.lastUpdate ? new Date(systemStatus.articles.lastUpdate).toLocaleDateString('ko-KR') : '없음' %>
+                        </p>
+                        <p>
+                            <strong>마지막 글 생성:</strong> 
+                            <%= systemStatus?.drafts?.lastGenerated ? new Date(systemStatus.drafts.lastGenerated).toLocaleDateString('ko-KR') : '없음' %>
+                        </p>
+                        <% if (latestWorkflow) { %>
+                            <p>
+                                <strong>최근 워크플로우:</strong> 
+                                <%= latestWorkflow.workflow?.mode %> 모드 | 
+                                <%= Math.round(latestWorkflow.workflow?.duration / 1000) %>초 소요
+                            </p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        const socket = io();
+        
+        socket.on('generation-progress', (data) => {
+            console.log('진행 상황:', data);
+            // 진행 상황 UI 업데이트
+        });
+        
+        async function scrapeArticles() {
+            if (!confirm('기사 수집을 시작하시겠습니까?')) return;
+            
+            try {
+                const response = await fetch('/api/scrape', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`기사 수집 완료! ${result.totalArticles}개 수집됨`);
+                    location.reload();
+                } else {
+                    alert('오류: ' + result.message);
+                }
+            } catch (error) {
+                alert('기사 수집 중 오류 발생');
+            }
+        }
+        
+        async function filterArticles() {
+            if (!confirm('기사 필터링을 시작하시겠습니까?')) return;
+            
+            try {
+                const response = await fetch('/api/filter', { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`필터링 완료! ${result.filteredCount}개 선별됨`);
+                    location.reload();
+                } else {
+                    alert('오류: ' + result.message);
+                }
+            } catch (error) {
+                alert('필터링 중 오류 발생');
+            }
+        }
+        
+        async function generateContent() {
+            if (!confirm('글 자동 생성을 시작하시겠습니까?')) return;
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'auto', maxArticles: 3 })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(result.message);
+                } else {
+                    alert('오류: ' + result.message);
+                }
+            } catch (error) {
+                alert('글 생성 중 오류 발생');
+            }
+        }
+
+        async function startWorkflow() {
+            if (!confirm('전체 워크플로우를 시작하시겠습니까? (글 생성부터 발행까지 전체 과정)')) return;
+            
+            try {
+                const response = await fetch('/api/workflow/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        options: {
+                            mode: 'auto',
+                            maxArticles: 1,
+                            autoApprove: false,
+                            maxRevisions: 3
+                        }
+                    })
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('워크플로우가 시작되었습니다!');
+                    // 워크플로우 관리 페이지로 이동
+                    window.open('/workflows', '_blank');
+                } else {
+                    alert('오류: ' + result.message);
+                }
+            } catch (error) {
+                alert('워크플로우 시작 중 오류 발생: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

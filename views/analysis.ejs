@@ -1,0 +1,259 @@
+<%- include('header') %>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">Brunch Analysis Controls</h6>
+                <button class="btn btn-primary" onclick="runAnalysis()">
+                    <i class="fas fa-play"></i> Run New Analysis
+                </button>
+            </div>
+            <div class="card-body">
+                <form onsubmit="runAnalysisWithUsername(event)">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" class="form-control" id="username" placeholder="Enter Brunch username (default: mikary)" />
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="fas fa-chart-bar"></i> Analyze User
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<% if (hasData) { %>
+    <div class="analysis-section">
+        <div class="row">
+            <% if (analysis.titlePatterns) { %>
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Title Patterns</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Average Length:</strong> <%= analysis.titlePatterns.averageLength?.toFixed(1) %> characters</p>
+                        <p><strong>Question Titles:</strong> <%= analysis.titlePatterns.questionTitles %></p>
+                        <p><strong>Exclamation Titles:</strong> <%= analysis.titlePatterns.exclamationTitles %></p>
+                        <p><strong>Numbered Titles:</strong> <%= analysis.titlePatterns.numberedTitles %></p>
+                        
+                        <h6 class="mt-3">Common Words:</h6>
+                        <div class="row">
+                            <% if (analysis.titlePatterns.commonWords) { %>
+                                <% Object.entries(analysis.titlePatterns.commonWords).slice(0, 5).forEach(([word, count]) => { %>
+                                <div class="col-6">
+                                    <span class="badge bg-secondary me-1"><%= word %>: <%= count %></span>
+                                </div>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (analysis.writingStyle) { %>
+            <div class="col-lg-6 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-success">Writing Style</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Avg Sentence Length:</strong> <%= analysis.writingStyle.averageSentenceLength?.toFixed(1) %> chars</p>
+                        <p><strong>Formality Score:</strong> <%= analysis.writingStyle.formalityScore?.toFixed(2) %></p>
+                        <p><strong>Personal Pronouns:</strong> <%= analysis.writingStyle.personalPronouns %></p>
+                        <p><strong>Question Sentences:</strong> <%= analysis.writingStyle.questionSentences %></p>
+                        <p><strong>Readability Score:</strong> <%= analysis.writingStyle.readabilityScore?.toFixed(1) %></p>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <div class="row">
+            <% if (analysis.postStructure) { %>
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-info">Post Structure</h6>
+                    </div>
+                    <div class="card-body metric-card">
+                        <h4 class="text-info"><%= analysis.postStructure.averageParagraphs?.toFixed(1) %></h4>
+                        <p class="mb-1">Average Paragraphs</p>
+                        <hr>
+                        <p><strong>Intro Rate:</strong> <%= (analysis.postStructure.introductionRate * 100)?.toFixed(1) %>%</p>
+                        <p><strong>Conclusion Rate:</strong> <%= (analysis.postStructure.conclusionRate * 100)?.toFixed(1) %>%</p>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (analysis.articleLength) { %>
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">Article Length</h6>
+                    </div>
+                    <div class="card-body metric-card">
+                        <h4 class="text-warning"><%= analysis.articleLength.averageLength?.toFixed(0) %></h4>
+                        <p class="mb-1">Average Characters</p>
+                        <hr>
+                        <p><strong>Min:</strong> <%= analysis.articleLength.minLength %></p>
+                        <p><strong>Max:</strong> <%= analysis.articleLength.maxLength %></p>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+
+            <% if (analysis.hashtagPatterns) { %>
+            <div class="col-lg-4 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-danger">Hashtag Patterns</h6>
+                    </div>
+                    <div class="card-body metric-card">
+                        <h4 class="text-danger"><%= analysis.hashtagPatterns.averageHashtagsPerPost?.toFixed(1) %></h4>
+                        <p class="mb-1">Average per Post</p>
+                        <hr>
+                        <% if (analysis.hashtagPatterns.mostFrequentHashtags) { %>
+                            <% Object.entries(analysis.hashtagPatterns.mostFrequentHashtags).slice(0, 3).forEach(([tag, count]) => { %>
+                                <span class="badge bg-danger me-1"><%= tag %>: <%= count %></span>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            <% } %>
+        </div>
+
+        <% if (analysis.frequentExpressions) { %>
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-secondary">Frequent Expressions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Transition Words:</h6>
+                                <% if (analysis.frequentExpressions.transitionWords) { %>
+                                    <% Object.entries(analysis.frequentExpressions.transitionWords).forEach(([word, count]) => { %>
+                                        <span class="badge bg-info me-1"><%= word %>: <%= count %></span>
+                                    <% }) %>
+                                <% } %>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Frequent Verbs:</h6>
+                                <% if (analysis.frequentExpressions.frequentVerbs) { %>
+                                    <% Object.entries(analysis.frequentExpressions.frequentVerbs).forEach(([verb, count]) => { %>
+                                        <span class="badge bg-success me-1"><%= verb %>: <%= count %></span>
+                                    <% }) %>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <div class="row">
+            <div class="col-12">
+                <div class="card shadow">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-dark">Analysis Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Last Updated:</strong> <%= analysis.lastUpdated ? new Date(analysis.lastUpdated).toLocaleString() : 'Unknown' %></p>
+                        <p><strong>Analyzed User:</strong> @<%= analysis.username || 'mikary' %></p>
+                        <button class="btn btn-outline-secondary" onclick="toggleRawData()">
+                            <i class="fas fa-code"></i> Toggle Raw Data
+                        </button>
+                        <div id="rawData" style="display: none;">
+                            <pre class="mt-3 bg-light p-3"><%= JSON.stringify(analysis, null, 2) %></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+<% } else { %>
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">No Analysis Data Available</h4>
+                    <p class="text-muted">Run an analysis to see detailed insights about Brunch content patterns.</p>
+                    <button class="btn btn-primary" onclick="runAnalysis()">
+                        <i class="fas fa-play"></i> Run First Analysis
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<script>
+async function runAnalysis() {
+    const button = event.target;
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Running Analysis...';
+    
+    try {
+        const response = await axios.post('/analysis/run');
+        if (response.data.success) {
+            alert('Analysis completed successfully!');
+            window.location.reload();
+        } else {
+            alert('Analysis failed: ' + response.data.error);
+        }
+    } catch (error) {
+        alert('Error running analysis: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+async function runAnalysisWithUsername(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('username').value || 'mikary';
+    const button = event.target.querySelector('button[type="submit"]');
+    const originalText = button.innerHTML;
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+    
+    try {
+        const response = await axios.post('/analysis/run', { username });
+        if (response.data.success) {
+            alert(`Analysis for @${username} completed successfully!`);
+            window.location.reload();
+        } else {
+            alert('Analysis failed: ' + response.data.error);
+        }
+    } catch (error) {
+        alert('Error running analysis: ' + error.message);
+    } finally {
+        button.disabled = false;
+        button.innerHTML = originalText;
+    }
+}
+
+function toggleRawData() {
+    const rawData = document.getElementById('rawData');
+    rawData.style.display = rawData.style.display === 'none' ? 'block' : 'none';
+}
+</script>
+
+<%- include('footer') %>

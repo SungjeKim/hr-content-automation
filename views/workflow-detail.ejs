@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %> - HR 콘텐츠 자동화</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -22px;
+            top: 8px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #dee2e6;
+            border: 2px solid #fff;
+            box-shadow: 0 0 0 3px #dee2e6;
+        }
+        
+        .timeline-item.active::before {
+            background: #007bff;
+            box-shadow: 0 0 0 3px #007bff;
+        }
+        
+        .timeline-item.completed::before {
+            background: #28a745;
+            box-shadow: 0 0 0 3px #28a745;
+        }
+        
+        .timeline-item.failed::before {
+            background: #dc3545;
+            box-shadow: 0 0 0 3px #dc3545;
+        }
+        
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-weight: 500;
+        }
+        
+        .status-idle { background: #f8f9fa; color: #6c757d; }
+        .status-content_generation { background: #cff4fc; color: #055160; }
+        .status-user_review { background: #fff3cd; color: #664d03; }
+        .status-revision_request { background: #f8d7da; color: #721c24; }
+        .status-final_approval { background: #cfe2ff; color: #0a58ca; }
+        .status-publishing { background: #d1ecf1; color: #0c5460; }
+        .status-published { background: #d1e7dd; color: #0f5132; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+        .status-cancelled { background: #e2e3e5; color: #383d41; }
+        
+        .progress-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: conic-gradient(#007bff 0%, #007bff var(--progress, 0%), #e9ecef var(--progress, 0%), #e9ecef 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .progress-circle::before {
+            content: '';
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+        }
+        
+        .progress-text {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+            font-size: 1.25rem;
+        }
+        
+        .article-preview {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            padding: 1.5rem;
+            border-radius: 0.375rem;
+        }
+        
+        .revision-item {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .action-buttons {
+            position: sticky;
+            bottom: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .quality-score {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .quality-good { color: #28a745; }
+        .quality-medium { color: #ffc107; }
+        .quality-poor { color: #dc3545; }
+        
+        .metadata-item {
+            background: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            text-align: center;
+        }
+        
+        .feedback-item {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- 네비게이션 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-cogs me-2"></i>HR 콘텐츠 자동화
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">대시보드</a>
+                <a class="nav-link" href="/articles">기사 관리</a>
+                <a class="nav-link" href="/drafts">초안 관리</a>
+                <a class="nav-link" href="/workflows">워크플로우</a>
+                <a class="nav-link" href="/analytics">통계</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 메인 컨테이너 -->
+    <div class="container mt-4 mb-5">
+        <!-- 헤더 -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2>
+                            <i class="fas fa-project-diagram me-2"></i>
+                            워크플로우 상세
+                        </h2>
+                        <p class="text-muted mb-0">ID: <%= workflow.id %></p>
+                    </div>
+                    <div>
+                        <button class="btn btn-outline-secondary" onclick="window.close()">
+                            <i class="fas fa-times me-2"></i>닫기
+                        </button>
+                        <button class="btn btn-primary ms-2" onclick="refreshWorkflow()">
+                            <i class="fas fa-sync-alt me-2"></i>새로고침
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 워크플로우 개요 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>워크플로우 개요
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="status-indicator status-<%= workflow.status %>">
+                                    <i class="fas fa-circle"></i>
+                                    <%= getStatusText(workflow.status) %>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6>현재 단계</h6>
+                                    <p class="text-muted"><%= getCurrentStepText(workflow.currentStep) %></p>
+                                </div>
+                                
+                                <% if (workflow.article) { %>
+                                <div class="mt-3">
+                                    <h6>글 제목</h6>
+                                    <p><%= workflow.article.title %></p>
+                                </div>
+                                <% } %>
+                            </div>
+                            <div class="col-md-6 text-end">
+                                <div class="progress-circle" style="--progress: <%= workflow.progress || 0 %>%">
+                                    <div class="progress-text"><%= workflow.progress || 0 %>%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>주요 지표
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="metadata-item mb-3">
+                            <div class="quality-score <%= workflow.qualityScore >= 80 ? 'quality-good' : workflow.qualityScore >= 60 ? 'quality-medium' : 'quality-poor' %>">
+                                <%= Math.round(workflow.qualityScore || 0) %>
+                            </div>
+                            <small class="text-muted">품질 점수</small>
+                        </div>
+                        
+                        <div class="metadata-item mb-3">
+                            <div class="h5 mb-0"><%= workflow.revisionCount || 0 %></div>
+                            <small class="text-muted">수정 횟수</small>
+                        </div>
+                        
+                        <% if (workflow.executionTime) { %>
+                        <div class="metadata-item">
+                            <div class="h6 mb-0"><%= Math.round(workflow.executionTime / 60000) %>분</div>
+                            <small class="text-muted">실행 시간</small>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 워크플로우 진행 단계 -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tasks me-2"></i>진행 단계
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            <div class="timeline-item <%= workflow.currentStep === 'generation' ? 'active' : workflow.progress > 20 ? 'completed' : '' %>">
+                                <h6>1. 글 생성 및 품질 검증</h6>
+                                <p class="text-muted">HR 기사를 분석하여 브런치 스타일의 글을 생성하고 품질을 검증합니다.</p>
+                                <% if (workflow.progress > 20) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>완료됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.currentStep === 'review' ? 'active' : workflow.progress > 40 ? 'completed' : '' %>">
+                                <h6>2. 사용자 검토</h6>
+                                <p class="text-muted">생성된 글을 검토하고 승인, 수정 요청, 또는 거부를 결정합니다.</p>
+                                <% if (workflow.progress > 40) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>완료됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.currentStep === 'revision' ? 'active' : workflow.progress > 60 ? 'completed' : '' %>">
+                                <h6>3. 수정 사항 반영</h6>
+                                <p class="text-muted">필요한 경우 AI를 통해 피드백을 반영하여 글을 수정합니다.</p>
+                                <% if (workflow.progress > 60 && workflow.revisionCount > 0) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i><%= workflow.revisionCount %>회 수정됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.currentStep === 'approval' ? 'active' : workflow.progress > 70 ? 'completed' : '' %>">
+                                <h6>4. 최종 승인</h6>
+                                <p class="text-muted">최종 검토를 통해 발행 준비를 완료합니다.</p>
+                                <% if (workflow.progress > 70) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>승인됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.currentStep === 'preparation' ? 'active' : workflow.progress > 80 ? 'completed' : '' %>">
+                                <h6>5. 발행 준비</h6>
+                                <p class="text-muted">브런치 플랫폼에 업로드할 수 있도록 글을 최종 정리합니다.</p>
+                                <% if (workflow.progress > 80) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>준비됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.currentStep === 'publishing' ? 'active' : workflow.progress > 90 ? 'completed' : '' %>">
+                                <h6>6. 자동 발행</h6>
+                                <p class="text-muted">브런치에 자동으로 글을 업로드하고 발행합니다.</p>
+                                <% if (workflow.progress > 90) { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>발행됨</small>
+                                <% } %>
+                            </div>
+                            
+                            <div class="timeline-item <%= workflow.status === 'published' ? 'completed' : '' %>">
+                                <h6>7. 발행 완료</h6>
+                                <p class="text-muted">발행 결과를 확인하고 기록을 저장합니다.</p>
+                                <% if (workflow.status === 'published') { %>
+                                <small class="text-success"><i class="fas fa-check me-1"></i>완료됨</small>
+                                <% if (workflow.publishedUrl) { %>
+                                <div class="mt-2">
+                                    <a href="<%= workflow.publishedUrl %>" target="_blank" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-external-link-alt me-1"></i>발행된 글 보기
+                                    </a>
+                                </div>
+                                <% } %>
+                                <% } %>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 글 내용 미리보기 -->
+        <% if (workflow.article) { %>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-alt me-2"></i>글 내용 미리보기
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="article-preview">
+                            <h4 class="mb-3"><%= workflow.article.title %></h4>
+                            <div class="mb-3">
+                                <% const body = workflow.article.body || ''; %>
+                                <% const preview = body.length > 300 ? body.substring(0, 300) + '...' : body; %>
+                                <p style="white-space: pre-line;"><%= preview %></p>
+                            </div>
+                            <% if (workflow.article.hashtags && workflow.article.hashtags.length > 0) { %>
+                            <div class="mb-2">
+                                <% workflow.article.hashtags.forEach(function(tag) { %>
+                                    <span class="badge bg-secondary me-1">#<%= tag %></span>
+                                <% }); %>
+                            </div>
+                            <% } %>
+                            <div class="text-muted small">
+                                글자 수: <%= workflow.article.wordCount || 0 %>자
+                                <% if (workflow.article.revisedAt) { %>
+                                | 수정일: <%= new Date(workflow.article.revisedAt).toLocaleString('ko-KR') %>
+                                <% } %>
+                            </div>
+                        </div>
+                        
+                        <% if (body.length > 300) { %>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-outline-primary" onclick="toggleFullContent()">
+                                <i class="fas fa-expand-alt me-2"></i>전체 내용 보기
+                            </button>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- 수정 히스토리 -->
+        <% if (workflow.revisionCount && workflow.revisionCount > 0) { %>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>수정 히스토리
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- 수정 히스토리는 실제 데이터가 있을 때 표시 -->
+                        <p class="text-muted">총 <%= workflow.revisionCount %>회 수정되었습니다.</p>
+                        <!-- 여기에 실제 수정 히스토리 데이터가 있다면 표시 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- 사용자 피드백 -->
+        <% if (workflow.status === 'user_review' || workflow.status === 'revision_request') { %>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-comments me-2"></i>피드백 및 검토
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <% if (workflow.status === 'user_review') { %>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            이 글에 대한 검토가 필요합니다. 아래 버튼을 사용하여 승인하거나 수정을 요청해주세요.
+                        </div>
+                        <% } %>
+                        
+                        <form id="feedbackForm" style="display: none;">
+                            <div class="mb-3">
+                                <label for="feedbackText" class="form-label">수정 요청 사항</label>
+                                <textarea class="form-control" id="feedbackText" rows="4" 
+                                          placeholder="어떤 부분을 어떻게 수정했으면 하는지 구체적으로 작성해주세요..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-warning" onclick="submitFeedback()">
+                                    <i class="fas fa-edit me-2"></i>수정 요청
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="cancelFeedback()">
+                                    취소
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- 스케줄 정보 -->
+        <% if (workflow.scheduledTime) { %>
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar me-2"></i>예약 발행 정보
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-clock me-2"></i>
+                            이 워크플로우는 <strong><%= new Date(workflow.scheduledTime).toLocaleString('ko-KR') %></strong>에 자동 발행됩니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- 메타데이터 -->
+        <div class="row mb-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info me-2"></i>메타데이터
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>생성 시간:</strong><br>
+                                <span class="text-muted"><%= new Date(workflow.createdAt).toLocaleString('ko-KR') %></span>
+                            </div>
+                            <% if (workflow.startedAt) { %>
+                            <div class="col-md-6">
+                                <strong>시작 시간:</strong><br>
+                                <span class="text-muted"><%= new Date(workflow.startedAt).toLocaleString('ko-KR') %></span>
+                            </div>
+                            <% } %>
+                            <% if (workflow.completedAt) { %>
+                            <div class="col-md-6 mt-2">
+                                <strong>완료 시간:</strong><br>
+                                <span class="text-muted"><%= new Date(workflow.completedAt).toLocaleString('ko-KR') %></span>
+                            </div>
+                            <% } %>
+                            <% if (workflow.executionTime) { %>
+                            <div class="col-md-6 mt-2">
+                                <strong>실행 시간:</strong><br>
+                                <span class="text-muted"><%= Math.round(workflow.executionTime / 60000) %>분</span>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 액션 버튼 (고정) -->
+    <% if (['user_review', 'revision_request', 'final_approval'].includes(workflow.status)) { %>
+    <div class="action-buttons">
+        <div class="container">
+            <div class="d-flex justify-content-center gap-3">
+                <% if (workflow.status === 'user_review') { %>
+                <button class="btn btn-success btn-lg" onclick="approveWorkflow()">
+                    <i class="fas fa-check me-2"></i>승인
+                </button>
+                <button class="btn btn-warning btn-lg" onclick="showFeedbackForm()">
+                    <i class="fas fa-edit me-2"></i>수정 요청
+                </button>
+                <% } %>
+                
+                <button class="btn btn-outline-danger btn-lg" onclick="cancelWorkflow()">
+                    <i class="fas fa-times me-2"></i>취소
+                </button>
+                
+                <% if (workflow.status === 'final_approval') { %>
+                <button class="btn btn-info btn-lg" onclick="schedulePublishing()">
+                    <i class="fas fa-calendar me-2"></i>예약 발행
+                </button>
+                <% } %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- 스케줄링 모달 -->
+    <div class="modal fade" id="scheduleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">발행 예약</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="scheduleForm">
+                        <div class="mb-3">
+                            <label for="scheduledDateTime" class="form-label">발행 일시</label>
+                            <input type="datetime-local" class="form-control" id="scheduledDateTime" 
+                                   min="<%= new Date().toISOString().slice(0, 16) %>">
+                        </div>
+                        <div class="mb-3">
+                            <label for="visibility" class="form-label">공개 범위</label>
+                            <select class="form-select" id="visibility">
+                                <option value="public">전체 공개</option>
+                                <option value="followers">팔로워만</option>
+                                <option value="private">비공개</option>
+                            </select>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="allowComments" checked>
+                            <label class="form-check-label" for="allowComments">
+                                댓글 허용
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" onclick="submitSchedule()">
+                        <i class="fas fa-calendar me-2"></i>예약 설정
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Socket.IO 연결
+        const socket = io();
+        const workflowId = '<%= workflow.id %>';
+
+        // Socket.IO 이벤트 리스너
+        socket.on('workflow-status', (status) => {
+            if (status.workflowId === workflowId) {
+                // 페이지 새로고침으로 간단히 처리
+                window.location.reload();
+            }
+        });
+
+        socket.on('workflow-notification', (notification) => {
+            if (notification.workflowId === workflowId) {
+                showNotification(notification);
+            }
+        });
+
+        // 워크플로우 새로고침
+        function refreshWorkflow() {
+            window.location.reload();
+        }
+
+        // 워크플로우 승인
+        async function approveWorkflow() {
+            try {
+                const response = await fetch(`/api/workflow/${workflowId}/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'approve',
+                        data: {}
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification({
+                        type: 'success',
+                        title: '승인 완료',
+                        message: '워크플로우가 승인되었습니다.'
+                    });
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification({
+                    type: 'error',
+                    title: '승인 실패',
+                    message: error.message
+                });
+            }
+        }
+
+        // 피드백 폼 표시
+        function showFeedbackForm() {
+            document.getElementById('feedbackForm').style.display = 'block';
+            document.getElementById('feedbackText').focus();
+        }
+
+        // 피드백 취소
+        function cancelFeedback() {
+            document.getElementById('feedbackForm').style.display = 'none';
+            document.getElementById('feedbackText').value = '';
+        }
+
+        // 피드백 제출
+        async function submitFeedback() {
+            const feedback = document.getElementById('feedbackText').value.trim();
+            
+            if (!feedback) {
+                showNotification({
+                    type: 'warning',
+                    title: '피드백 필요',
+                    message: '수정 요청 사항을 입력해주세요.'
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/workflow/${workflowId}/action`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'request_revision',
+                        data: { feedback }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification({
+                        type: 'info',
+                        title: '수정 요청됨',
+                        message: '수정 요청이 전달되었습니다.'
+                    });
+                    cancelFeedback();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification({
+                    type: 'error',
+                    title: '수정 요청 실패',
+                    message: error.message
+                });
+            }
+        }
+
+        // 워크플로우 취소
+        async function cancelWorkflow() {
+            if (!confirm('정말로 이 워크플로우를 취소하시겠습니까?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/workflow/${workflowId}/cancel`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        reason: 'User cancelled from detail page'
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification({
+                        type: 'info',
+                        title: '워크플로우 취소됨',
+                        message: '워크플로우가 취소되었습니다.'
+                    });
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification({
+                    type: 'error',
+                    title: '취소 실패',
+                    message: error.message
+                });
+            }
+        }
+
+        // 발행 예약
+        function schedulePublishing() {
+            const modal = new bootstrap.Modal(document.getElementById('scheduleModal'));
+            modal.show();
+        }
+
+        // 예약 제출
+        async function submitSchedule() {
+            const scheduledDateTime = document.getElementById('scheduledDateTime').value;
+            const visibility = document.getElementById('visibility').value;
+            const allowComments = document.getElementById('allowComments').checked;
+            
+            if (!scheduledDateTime) {
+                showNotification({
+                    type: 'warning',
+                    title: '발행 일시 필요',
+                    message: '발행 일시를 선택해주세요.'
+                });
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/workflow/${workflowId}/schedule`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scheduledTime: scheduledDateTime,
+                        publishOptions: {
+                            visibility,
+                            allowComments
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.success) {
+                    showNotification({
+                        type: 'success',
+                        title: '발행 예약됨',
+                        message: '발행이 예약되었습니다.'
+                    });
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('scheduleModal')).hide();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                showNotification({
+                    type: 'error',
+                    title: '예약 실패',
+                    message: error.message
+                });
+            }
+        }
+
+        // 전체 내용 토글
+        function toggleFullContent() {
+            // 구현은 필요시 추가
+            showNotification({
+                type: 'info',
+                title: '전체 내용',
+                message: '전체 내용 보기 기능은 추후 구현될 예정입니다.'
+            });
+        }
+
+        // 알림 표시
+        function showNotification(notification) {
+            // 간단한 alert로 대체 (추후 toast로 개선 가능)
+            const type = notification.type === 'error' ? '오류' : 
+                        notification.type === 'warning' ? '경고' : 
+                        notification.type === 'success' ? '성공' : '알림';
+            alert(`[${type}] ${notification.title}\n${notification.message}`);
+        }
+
+        // 상태별 텍스트 함수들
+        function getStatusText(status) {
+            const statusTexts = {
+                'idle': '대기',
+                'content_generation': '글 생성 중',
+                'quality_check': '품질 검증 중',
+                'user_review': '검토 대기',
+                'revision_request': '수정 중',
+                'final_approval': '최종 승인',
+                'publish_preparation': '발행 준비',
+                'publishing': '발행 중',
+                'published': '발행 완료',
+                'failed': '실패',
+                'cancelled': '취소됨'
+            };
+            return statusTexts[status] || '알 수 없음';
+        }
+
+        function getCurrentStepText(step) {
+            const stepTexts = {
+                'generation': '글 생성 및 품질 검증',
+                'review': '사용자 검토 대기',
+                'revision': '수정 사항 반영',
+                'approval': '최종 승인 확인',
+                'preparation': '브런치 업로드 준비',
+                'publishing': '자동 발행 실행',
+                'verification': '발행 결과 확인'
+            };
+            return stepTexts[step] || '진행 중';
+        }
+    </script>
+</body>
+</html>

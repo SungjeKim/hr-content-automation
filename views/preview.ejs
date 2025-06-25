@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .brunch-style {
+            max-width: 680px;
+            margin: 0 auto;
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.8;
+        }
+        .brunch-style h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            line-height: 1.4;
+        }
+        .brunch-style p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .quality-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+        }
+        .quality-badge {
+            font-size: 1.2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .quality-passed { background-color: #d4edda; color: #155724; }
+        .quality-needs-improvement { background-color: #fff3cd; color: #856404; }
+        .score-detail {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .article-meta {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .hashtag-list {
+            margin-top: 3rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .hashtag {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #666;
+            padding: 0.3rem 0.8rem;
+            margin: 0.2rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        .original-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+        }
+        .action-buttons {
+            position: sticky;
+            top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/navbar') %>
+    
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- 브런치 스타일 미리보기 -->
+                <div class="brunch-style">
+                    <h1><%= article.title %></h1>
+                    
+                    <div class="article-meta">
+                        작성일: <%= new Date(article.generatedAt).toLocaleDateString('ko-KR') %> | 
+                        글자 수: <%= article.wordCount %>자 | 
+                        문단 수: <%= article.paragraphCount %>개
+                    </div>
+                    
+                    <div class="article-content">
+                        <% if (editMode) { %>
+                            <form id="editForm">
+                                <textarea class="form-control" rows="20" id="contentEditor"><%= article.body %></textarea>
+                            </form>
+                        <% } else { %>
+                            <% article.body.split('\n\n').forEach(paragraph => { %>
+                                <% if (paragraph.trim()) { %>
+                                    <p><%= paragraph.trim() %></p>
+                                <% } %>
+                            <% }) %>
+                        <% } %>
+                    </div>
+                    
+                    <div class="hashtag-list">
+                        <% article.hashtags.forEach(tag => { %>
+                            <span class="hashtag">#<%= tag %></span>
+                        <% }) %>
+                    </div>
+                    
+                    <div class="original-info">
+                        <strong>원본 기사:</strong><br>
+                        <%= article.originalArticle.title %><br>
+                        <small><%= article.originalArticle.source %> | 
+                        <%= new Date(article.originalArticle.publishDate).toLocaleDateString('ko-KR') %></small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- 품질 정보 및 액션 버튼 -->
+                <div class="action-buttons">
+                    <% if (qualityReport) { %>
+                        <div class="quality-info">
+                            <div class="text-center mb-3">
+                                <span class="badge quality-badge <%= qualityReport.status === 'PASSED' ? 'quality-passed' : 'quality-needs-improvement' %>">
+                                    <%= qualityReport.status === 'PASSED' ? '✅ 발행 준비 완료' : '⚠️ 개선 필요' %>
+                                </span>
+                                <h3 class="mt-2"><%= qualityReport.scores.total %>점</h3>
+                            </div>
+                            
+                            <div class="score-detail">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>브런치 스타일</span>
+                                    <strong><%= qualityReport.scores.brunchStyle %>점</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>콘텐츠 품질</span>
+                                    <strong><%= qualityReport.scores.contentQuality %>점</strong>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>가독성</span>
+                                    <strong><%= qualityReport.scores.readability %>점</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>SEO 최적화</span>
+                                    <strong><%= qualityReport.scores.seoOptimization %>점</strong>
+                                </div>
+                            </div>
+                            
+                            <% if (qualityReport.recommendations && qualityReport.recommendations.priority.length > 0) { %>
+                                <div class="mt-3">
+                                    <strong>개선 제안:</strong>
+                                    <ul class="small mt-2">
+                                        <% qualityReport.recommendations.priority.forEach(rec => { %>
+                                            <li><%= rec.solution %></li>
+                                        <% }) %>
+                                    </ul>
+                                </div>
+                            <% } %>
+                        </div>
+                    <% } %>
+                    
+                    <div class="d-grid gap-2 mt-3">
+                        <% if (editMode) { %>
+                            <button class="btn btn-success" onclick="saveEdit()">
+                                <i class="fas fa-save"></i> 저장하기
+                            </button>
+                            <a href="/preview/<%= encodeURIComponent(article.title) %>" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> 취소
+                            </a>
+                        <% } else { %>
+                            <a href="/preview/<%= encodeURIComponent(article.title) %>?edit=true" class="btn btn-primary">
+                                <i class="fas fa-edit"></i> 편집하기
+                            </a>
+                            <% if (qualityReport && qualityReport.status === 'PASSED') { %>
+                                <button class="btn btn-success" onclick="approveArticle()">
+                                    <i class="fas fa-check"></i> 발행 승인
+                                </button>
+                            <% } %>
+                            <a href="/drafts" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 목록으로
+                            </a>
+                        <% } %>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <h6>다운로드:</h6>
+                        <div class="btn-group-vertical w-100">
+                            <a href="/data/outputs/article-<%= article.generatedAt.split('T')[0] %>-<%= article.generatedAt.split('T')[1].split('.')[0].replace(/:/g, '-') %>.md" 
+                               class="btn btn-sm btn-outline-secondary text-start" download>
+                                <i class="fas fa-download"></i> Markdown
+                            </a>
+                            <a href="/data/outputs/article-<%= article.generatedAt.split('T')[0] %>-<%= article.generatedAt.split('T')[1].split('.')[0].replace(/:/g, '-') %>.txt" 
+                               class="btn btn-sm btn-outline-secondary text-start" download>
+                                <i class="fas fa-download"></i> 텍스트
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        async function approveArticle() {
+            const notes = prompt('승인 메모를 입력하세요 (선택사항):');
+            
+            try {
+                const response = await fetch('/approve/<%= encodeURIComponent(article.title) %>', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ notes })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert('글이 승인되었습니다!');
+                    window.location.href = '/drafts';
+                } else {
+                    alert('오류: ' + result.message);
+                }
+            } catch (error) {
+                alert('승인 중 오류가 발생했습니다.');
+            }
+        }
+        
+        function saveEdit() {
+            // 편집 저장 기능 구현
+            alert('편집 기능은 추후 구현 예정입니다.');
+        }
+    </script>
+</body>
+</html>

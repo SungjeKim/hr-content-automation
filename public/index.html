@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HR 콘텐츠 자동화 시스템</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <i class="fas fa-robot me-2"></i>
+                HR 콘텐츠 자동화 시스템
+            </div>
+            
+            <div class="d-flex align-items-center">
+                <!-- 시간 & 상태 -->
+                <div class="me-4">
+                    <div class="text-light small">
+                        <div id="currentTime"></div>
+                        <div class="d-flex align-items-center">
+                            <span class="status-indicator" id="systemStatus"></span>
+                            <span class="ms-1">시스템 정상</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 액션 버튼 -->
+                <div class="btn-group me-3">
+                    <button class="btn btn-success btn-sm" onclick="scrapeArticles()">
+                        <i class="fas fa-download"></i> 기사 수집
+                    </button>
+                    <button class="btn btn-info btn-sm" onclick="generateContent()">
+                        <i class="fas fa-magic"></i> 글 자동생성
+                    </button>
+                </div>
+                
+                <!-- 테마 토글 -->
+                <button class="btn btn-outline-light btn-sm" onclick="toggleTheme()">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Progress Bar (글 생성 진행시) -->
+    <div id="progressContainer" class="progress-container d-none">
+        <div class="container-fluid">
+            <div class="d-flex align-items-center">
+                <span class="me-3">글 생성 진행중...</span>
+                <div class="progress flex-grow-1">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         id="progressBar" style="width: 0%"></div>
+                </div>
+                <span class="ms-3" id="progressText">0%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="container-fluid mt-3">
+        <div class="row">
+            <!-- 왼쪽: 오늘의 추천 기사 -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-star text-warning"></i>
+                            오늘의 추천 기사
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshArticles()">
+                            <i class="fas fa-refresh"></i>
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="recommendedArticles" class="article-list">
+                            <!-- 기사 목록이 여기에 동적으로 로드됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 가운데: 작성된 글 목록 -->
+            <div class="col-lg-5 mb-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-alt text-info"></i>
+                            작성된 글 목록
+                        </h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary active" data-filter="all">전체</button>
+                            <button class="btn btn-outline-secondary" data-filter="passed">통과</button>
+                            <button class="btn btn-outline-secondary" data-filter="pending">검토중</button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="draftsList" class="draft-list">
+                            <!-- 글 목록이 여기에 동적으로 로드됩니다 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 통계 및 상태 -->
+            <div class="col-lg-3 mb-4">
+                <!-- 통계 카드 -->
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <div class="stat-icon">
+                                    <i class="fas fa-newspaper"></i>
+                                </div>
+                                <h3 class="stat-number" id="totalArticles">0</h3>
+                                <p class="stat-label">수집된 기사</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <div class="stat-icon">
+                                    <i class="fas fa-pen"></i>
+                                </div>
+                                <h3 class="stat-number" id="totalDrafts">0</h3>
+                                <p class="stat-label">생성된 글</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12 mb-3">
+                        <div class="card stat-card">
+                            <div class="card-body text-center">
+                                <div class="stat-icon">
+                                    <i class="fas fa-chart-line"></i>
+                                </div>
+                                <h3 class="stat-number" id="avgQuality">0</h3>
+                                <p class="stat-label">평균 품질점수</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 스케줄러 상태 -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-clock"></i>
+                            자동화 스케줄러
+                        </h6>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-success" id="startScheduler" onclick="controlScheduler('start')">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" id="stopScheduler" onclick="controlScheduler('stop')">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="schedulerStatus" class="mb-2">
+                            <span class="badge bg-secondary">로딩 중...</span>
+                        </div>
+                        <div class="scheduler-tasks">
+                            <div class="task-item">
+                                <small class="text-muted">
+                                    <i class="fas fa-download"></i> 기사 수집: 매일 09:00
+                                    <button class="btn btn-xs btn-outline-primary float-end" onclick="runTask('scrapeArticles')">실행</button>
+                                </small>
+                            </div>
+                            <div class="task-item">
+                                <small class="text-muted">
+                                    <i class="fas fa-filter"></i> 기사 필터링: 매일 09:30
+                                    <button class="btn btn-xs btn-outline-primary float-end" onclick="runTask('filterArticles')">실행</button>
+                                </small>
+                            </div>
+                            <div class="task-item">
+                                <small class="text-muted">
+                                    <i class="fas fa-magic"></i> 글 생성: 매일 10:00
+                                    <button class="btn btn-xs btn-outline-primary float-end" onclick="runTask('generateContent')">실행</button>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 실시간 로그 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-terminal"></i>
+                            실시간 로그
+                        </h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="activityLog" class="activity-log">
+                            <!-- 로그가 여기에 표시됩니다 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 퀵 차트 -->
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-chart-pie"></i>
+                            품질 분포
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="qualityChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 모달: 글 미리보기 -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">글 미리보기</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="previewContent">
+                        <!-- 미리보기 내용 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                    <button type="button" class="btn btn-primary" onclick="editArticle()">편집</button>
+                    <button type="button" class="btn btn-success" onclick="approveArticle()">승인</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 모달: 글 편집 -->
+    <div class="modal fade" id="editModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">글 편집</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <div class="mb-3">
+                            <label class="form-label">제목</label>
+                            <input type="text" class="form-control" id="editTitle">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">내용</label>
+                            <textarea class="form-control" id="editContent" rows="15"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">해시태그</label>
+                            <input type="text" class="form-control" id="editHashtags" placeholder="#태그1 #태그2 #태그3">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEdit()">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 토스트 -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="notificationToast" class="toast" role="alert">
+            <div class="toast-header">
+                <i class="fas fa-bell text-primary me-2"></i>
+                <strong class="me-auto">알림</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage">
+                메시지가 여기에 표시됩니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/js/dashboard.js"></script>
+
+    <script>
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDashboard();
+            startRealTimeUpdates();
+            updateCurrentTime();
+            setInterval(updateCurrentTime, 1000);
+        });
+    </script>
+</body>
+</html>
