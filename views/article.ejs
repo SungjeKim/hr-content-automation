@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title><%= article.title %></title>
+</head>
+<body>
+  <h1><%= article.title %></h1>
+  <p><strong>[요약]</strong> <%= article.summary %></p>
+
+  <% if (brunchText) { %>
+    <hr>
+    <h2>📝 브런치 스타일 글</h2>
+    <pre style="white-space: pre-wrap; font-family: inherit;"><%= brunchText %></pre>
+  <% } else { %>
+    <p><em>브런치 스타일 글이 아직 생성되지 않았습니다.</em></p>
+  <% } %>
+
+  <p><a href="/">← 목록으로 돌아가기</a></p>
+</body>
+</html>

@@ -1,0 +1,9 @@
+router.get('/dashboard', (req, res) => {
+  const stats = {
+    collected: 25,
+    filtered: 10,
+    generated: 5,
+    successRate: '40%',
+  };
+  res.render('dashboard', { stats });
+});

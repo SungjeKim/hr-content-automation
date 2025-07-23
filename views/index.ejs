@@ -6,18 +6,25 @@
 </head>
 <body>
   <h1>요약된 HR 기사들</h1>
-  <ul>
-    <% articles.forEach((article, i) => { %>
-      <li>
-        <strong><%= article.title %></strong><br/>
-        <small><%= article.summary %></small><br/>
-        <form action="/select" method="POST">
-          <input type="hidden" name="articleIndex" value="<%= i %>">
-          <button type="submit">이 기사 선택</button>
-        </form>
-        <hr/>
-      </li>
-    <% }) %>
-  </ul>
+<ul>
+  <% articles.forEach((article, i) => { %>
+    <li>
+      <h3><%= article.title %></h3>
+      <p><%= article.summary %></p>
+      <a href="/article/<%= i %>"><button>이 기사 선택</button></a>
+    </li>
+  <% }) %>
+</ul>
 </body>
 </html>
+
+<% articles.forEach((article, index) => { %>
+  <div>
+    <h2><%= article.title %></h2>
+    <p><%= article.summary %></p>
+    <a href="/article/<%= index %>">상세 보기</a>
+    |
+    <a href="/generate/<%= index %>">✍ 이 기사로 브런치 글 생성</a> <!-- 요 부분 추가 -->
+  </div>
+  <hr>
+<% }) %>

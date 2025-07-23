@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const path = require('path');
+const articleRoutes = require('./routes/articles'); 
 const cors = require('cors');
 const fs = require('fs-extra');
 const bodyParser = require('body-parser');
@@ -12,6 +13,7 @@ const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const morgan = require('morgan');
 const winston = require('winston');
+const dashboardRoutes = require('./routes/dashboard');
 
 // 컴포넌트 임포트
 const ContentCreationWorkflow = require('./src/workflows/contentCreation');
@@ -51,6 +53,8 @@ const logger = winston.createLogger({
 // Express 앱 초기화
 const app = express();
 const server = http.createServer(app);
+const indexRouter = require('./routes/index');
+app.use('/', indexRouter);
 const io = new Server(server, {
     cors: {
         origin: process.env.CORS_ORIGIN || false,
@@ -58,9 +62,6 @@ const io = new Server(server, {
         credentials: true
     }
 });
-
-// 포트 설정
-const PORT = process.env.PORT || 3001;
 
 // 보안 미들웨어
 app.use(helmet({
@@ -179,6 +180,19 @@ app.use('/data', express.static(path.join(__dirname, 'data'), {
 // 뷰 엔진 설정
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+
+// 정적 파일 제공
+app.use(express.static(path.join(__dirname, 'public')));
+
+// 라우팅 연결
+app.use('/', articleRoutes); // 📌 여기에 핵심 라우팅이 들어감
+app.use('/dashboard', dashboardRoutes); // 선택사항
+
+// 서버 실행
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`✅ 서버가 포트 ${PORT}에서 실행 중입니다.`);
+});
 
 // 전역 변수
 let currentWorkflow = null;
